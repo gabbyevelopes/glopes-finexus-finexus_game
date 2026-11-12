@@ -5,11 +5,16 @@ export const SENTENCE_PAUSE_MS = 400;
 /** Extra pause after a comma, in milliseconds. */
 export const COMMA_PAUSE_MS = 150;
 
+/** Background behind Finn's portrait. */
+const FINN_PORTRAIT_BG = '#3d3870';
+
 export interface DialogueLine {
   character: string;
   text: string;
-  /** Placeholder portrait color. Omit for narrator lines (no portrait shown). */
+  /** Portrait background color. Omit (with no portrait) for narrator lines: no portrait shown. */
   portraitColor?: string;
+  /** Which character's picture to show in the portrait circle, e.g. 'finn'. */
+  portrait?: string;
   /**
    * Hide the Next button and leave the line on screen until the game closes it
    * (e.g. a prompt that waits for the player to click something in the world).
@@ -25,7 +30,8 @@ export const dialogueLines: DialogueLine[] = [
   {
     character: 'Finn',
     text: "People say money doesn't buy happiness. But it buys opportunity... but growing up in the Ledges, opportunities were always in short supply.",
-    portraitColor: '#4CAF50',
+    portrait: 'finn',
+    portraitColor: FINN_PORTRAIT_BG,
   },
   { character: 'Narrator', text: 'Click anywhere or use the arrow keys to move Finn forward.' },
   { character: 'Narrator', text: 'Keep walking right to explore the Ledges.' },
@@ -116,7 +122,12 @@ export const exitPhonePromptLines: DialogueLine[] = [
 
 /** Once the phone is closed. The last line of Level 0. */
 export const endingLines: DialogueLine[] = [
-  { character: 'Finn', text: "Looks like it's time to get a suit.", portraitColor: '#4CAF50' },
+  {
+    character: 'Finn',
+    text: "Looks like it's time to get a suit.",
+    portrait: 'finn',
+    portraitColor: FINN_PORTRAIT_BG,
+  },
 ];
 
 /** Shown on the Level 0 complete screen. */
@@ -127,6 +138,7 @@ export const billboardLines: DialogueLine[] = [
   {
     character: 'Finn',
     text: "One day... I'll work here. They only take a few interns every summer, but it's my only ticket out of this place.",
-    portraitColor: '#4CAF50',
+    portrait: 'finn',
+    portraitColor: FINN_PORTRAIT_BG,
   },
 ];

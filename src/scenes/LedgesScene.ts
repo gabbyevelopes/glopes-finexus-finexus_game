@@ -42,6 +42,8 @@ const CAMERA_DEADZONE_FRACTION = 0.6;
 const FINN_HEIGHT_FRACTION = 0.25;
 /** How wide the world is, in pixels. The street art is drawn for exactly this width. */
 const WORLD_WIDTH = 2400;
+/** Square around Finn's head in his standing frame (art pixels), used for his dialogue portrait. */
+const FINN_PORTRAIT_CROP = { x: 16, y: 0, size: 120 };
 /** Where Finn starts, in world pixels from the left edge. */
 const FINN_START_X = 400;
 /** Ground line, as a fraction of the screen height from the top. */
@@ -269,11 +271,30 @@ export class LedgesScene extends Phaser.Scene {
 
     this.closeDialogue();
     this.lockMovement();
-    this.dialogueBox = new DialogueBox(parent, lines, () => {
-      this.dialogueOpen = false;
-      this.dialogueBox = undefined;
-      onDone?.();
-    });
+    this.dialogueBox = new DialogueBox(
+      parent,
+      lines,
+      () => {
+        this.dialogueOpen = false;
+        this.dialogueBox = undefined;
+        onDone?.();
+      },
+      (key) => (key === 'finn' ? this.finnPortrait() : undefined)
+    );
+  }
+
+  /**
+   * Finn's head cropped from his live sprite, so the portrait always matches the hair and
+   * skin chosen in FinLab. The crop is 120px square, shown at half size (60px) to stay crisp.
+   */
+  private finnPortrait(): string {
+    const source = this.textures.get('finn_idle_live').getSourceImage() as HTMLCanvasElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = FINN_PORTRAIT_CROP.size;
+    canvas.height = FINN_PORTRAIT_CROP.size;
+    const { x, y, size } = FINN_PORTRAIT_CROP;
+    canvas.getContext('2d')!.drawImage(source, x, y, size, size, 0, 0, size, size);
+    return canvas.toDataURL();
   }
 
   /** Remove the dialogue box right away (used for prompts that wait for a click elsewhere). */

@@ -20,11 +20,16 @@
 
 .dialogue-portrait {
   flex-shrink: 0;
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  border: none;
+  border: 3px solid #2a2648;
   outline: none;
+  box-sizing: border-box;
+  /* Character portraits are pixel art cropped from their sprite. */
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
 }
 
 .dialogue-text-wrap {

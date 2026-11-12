@@ -18,10 +18,21 @@ export class DialogueBox {
   private onComplete?: () => void;
   private typingTimer?: number;
   private charIndex = 0;
+  private getPortrait?: (key: string) => string | undefined;
 
-  constructor(parent: HTMLElement, lines: DialogueLine[], onComplete?: () => void) {
+  /**
+   * @param getPortrait Turns a line's `portrait` key into an image URL. It's asked again for
+   *   every line, so a portrait can change (e.g. after Finn is restyled in FinLab).
+   */
+  constructor(
+    parent: HTMLElement,
+    lines: DialogueLine[],
+    onComplete?: () => void,
+    getPortrait?: (key: string) => string | undefined
+  ) {
     this.lines = lines;
     this.onComplete = onComplete;
+    this.getPortrait = getPortrait;
 
     this.container = document.createElement('div');
     this.container.className = 'dialogue-box';
@@ -60,9 +71,11 @@ export class DialogueBox {
     this.nameEl.textContent = line.character;
     this.textEl.textContent = '';
 
-    if (line.portraitColor) {
+    const portraitUrl = line.portrait ? this.getPortrait?.(line.portrait) : undefined;
+    if (line.portraitColor || portraitUrl) {
       this.portraitEl.style.display = '';
-      this.portraitEl.style.backgroundColor = line.portraitColor;
+      this.portraitEl.style.backgroundColor = line.portraitColor ?? '';
+      this.portraitEl.style.backgroundImage = portraitUrl ? `url(${portraitUrl})` : '';
     } else {
       this.portraitEl.style.display = 'none';
     }
