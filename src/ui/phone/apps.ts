@@ -6,7 +6,10 @@ import {
   skinTones,
   type FinLabColor,
 } from '../../data/finLabItems';
-import { emails } from '../../data/emails';
+import { emails, type Email } from '../../data/emails';
+
+/** Neobyte coin art (made by tools/generate_brand_art.mjs). */
+const NEOBYTE_COIN = 'assets/neobyte_coin.png';
 
 export interface PhoneAppContext {
   /** Tell the game something happened inside the app (e.g. 'equip-changed', 'email-opened'). */
@@ -20,6 +23,8 @@ export interface PhoneApp {
   name: string;
   /** Short text shown on the app tile (placeholder until there's icon art). */
   icon: string;
+  /** Pixel-art icon for the app tile; used instead of the text icon when set. */
+  iconImage?: string;
   /** Tile color. */
   color: string;
   /** Builds the app's screen each time it's opened or refreshed. */
@@ -43,10 +48,12 @@ export const phoneApps: PhoneApp[] = [
     id: 'wallet',
     name: 'Wallet',
     icon: '$',
-    color: '#ffd23f',
+    iconImage: NEOBYTE_COIN,
+    color: '#1b1b3a',
     render() {
       const wallet = el('div', 'phone-wallet');
       wallet.append(
+        pixelImg(NEOBYTE_COIN, 'phone-wallet-coin'),
         el('div', 'phone-wallet-label', 'Balance'),
         el('div', 'phone-wallet-amount', String(gameState.neobytes)),
         el('div', 'phone-wallet-unit', 'Neobytes')
@@ -79,12 +86,13 @@ export const phoneApps: PhoneApp[] = [
       for (const email of emails) {
         const row = el('button', 'phone-inbox-row');
         if (!gameState.readEmails.has(email.id)) row.appendChild(el('div', 'phone-inbox-unread'));
+        if (email.icon) row.appendChild(pixelImg(email.icon, 'phone-inbox-icon'));
         const text = el('div', 'phone-inbox-text');
         text.append(el('div', 'phone-inbox-from', email.from), el('div', 'phone-inbox-subject', email.subject));
         row.appendChild(text);
         row.addEventListener('click', () => {
           gameState.readEmails.add(email.id);
-          inbox.replaceChildren(emailView(email.from, email.subject, email.body, () => ctx.refresh()));
+          inbox.replaceChildren(emailView(email, () => ctx.refresh()));
           ctx.notify('email-opened');
         });
         inbox.appendChild(row);
@@ -135,16 +143,25 @@ function colorPicker(
   return section;
 }
 
-function emailView(from: string, subject: string, body: string, onClose: () => void): HTMLElement {
+function emailView(email: Email, onClose: () => void): HTMLElement {
   const view = el('div', 'phone-email');
   const close = el('button', 'phone-email-close', 'X');
   close.setAttribute('aria-label', 'Close message');
   close.addEventListener('click', onClose);
+  view.appendChild(close);
+  if (email.logo) view.appendChild(pixelImg(email.logo, 'phone-email-logo'));
   view.append(
-    close,
-    el('div', 'phone-email-from', `From: ${from}`),
-    el('div', 'phone-email-subject', subject),
-    el('p', 'phone-email-body', body)
+    el('div', 'phone-email-from', `From: ${email.from}`),
+    el('div', 'phone-email-subject', email.subject),
+    el('p', 'phone-email-body', email.body)
   );
   return view;
+}
+
+/** A pixel-art image, sized in CSS by its class. */
+function pixelImg(src: string, className: string): HTMLImageElement {
+  const img = el('img', className);
+  img.src = src;
+  img.alt = '';
+  return img;
 }

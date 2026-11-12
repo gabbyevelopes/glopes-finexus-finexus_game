@@ -168,7 +168,15 @@ export class Phone {
       const icon = document.createElement('div');
       icon.className = 'phone-app-icon';
       icon.style.backgroundColor = app.color;
-      icon.textContent = app.icon;
+      if (app.iconImage) {
+        const img = document.createElement('img');
+        img.className = 'phone-app-icon-img';
+        img.src = app.iconImage;
+        img.alt = '';
+        icon.appendChild(img);
+      } else {
+        icon.textContent = app.icon;
+      }
 
       const name = document.createElement('div');
       name.className = 'phone-app-name';

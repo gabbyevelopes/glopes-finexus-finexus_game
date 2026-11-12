@@ -6,6 +6,8 @@ export interface InfoCardContent {
   title: string;
   /** Optional logo image path. Falls back to the text title if it can't load. */
   logoSrc?: string;
+  /** Pixel-art logos are shown this many times their real size (whole numbers stay crisp). */
+  logoScale?: number;
   tagline?: string;
   body: string;
 }
@@ -35,6 +37,9 @@ export class InfoCard {
       logo.addEventListener('error', () => {
         logo.remove();
         title.style.display = '';
+      });
+      logo.addEventListener('load', () => {
+        logo.style.width = `${logo.naturalWidth * (content.logoScale ?? 1)}px`;
       });
       card.appendChild(logo);
     }

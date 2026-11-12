@@ -21,8 +21,9 @@ function fitToWindow(game: Phaser.Game): void {
   game.scale.refresh();
 }
 
-// Phaser draws text onto the canvas, so the retro font must be loaded first.
-document.fonts.load('16px "Press Start 2P"').finally(() => {
+// Phaser draws text onto the canvas, so the fonts must be loaded first:
+// Press Start 2P for game text, VT323 for the Vaulton tagline.
+Promise.allSettled([document.fonts.load('16px "Press Start 2P"'), document.fonts.load('16px "VT323"')]).finally(() => {
   const game = new Phaser.Game(config);
   game.events.once(Phaser.Core.Events.READY, () => fitToWindow(game));
   window.addEventListener('resize', () => fitToWindow(game));

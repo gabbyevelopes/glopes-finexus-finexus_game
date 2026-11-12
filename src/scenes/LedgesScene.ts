@@ -24,6 +24,7 @@ import {
 import { AudioManager } from '../audio/AudioManager';
 import { hairColors, skinTones } from '../data/finLabItems';
 import { FinnRecolor } from '../game/FinnRecolor';
+import { hexToHsv, hsvToRgb, rgbToHsv } from '../game/color';
 
 /**
  * Steps of the phone tutorial after the first coin. During it, only the app for the
@@ -43,6 +44,27 @@ const FINN_HEIGHT_FRACTION = 0.25;
 const WORLD_WIDTH_SCREENS = 3;
 /** Ground line, as a fraction of the screen height from the top. */
 const GROUND_Y_FRACTION = 0.8;
+/**
+ * How fast the far skyline scrolls compared to the camera (0 = stuck to the screen,
+ * 1 = moves with the street). Lower feels farther away.
+ */
+const SKYLINE_PARALLAX = 0.4;
+/**
+ * Skyline recolor. The art keeps its fade and building shapes, but is shifted to this
+ * indigo and brightened. Brightness goes from 0 (black) to 1 (full brightness).
+ */
+const SKYLINE_COLOR = '#5A5A9C';
+/** Brightness of the darkest part of the skyline (the top of the sky). */
+const SKYLINE_DARKEST = 0.34;
+/** Brightness of the lightest part of the skyline (the glow just above the ground). */
+const SKYLINE_LIGHTEST = 0.64;
+/** Generated pixel art (buildings, ground, lamps) is drawn small and scaled up by this much. */
+const ART_SCALE = 4;
+/** How fast the buildings scroll compared to the camera. Between the skyline (0.4) and the street (1). */
+const BUILDINGS_PARALLAX = 0.7;
+/** First streetlamp position and the gap between lamps, in world pixels. */
+const STREETLAMP_START_X = 200;
+const STREETLAMP_SPACING = 400;
 /** Vaulton logo, used on the billboard and the info card. Text "VAULTON" is shown until this file exists. */
 const VAULTON_LOGO_PATH = 'assets/vaulton_logo.png';
 /** Where the Vaulton billboard stands, in world pixels from the left edge. */
@@ -53,6 +75,8 @@ const BILLBOARD_TRIGGER_DISTANCE = 200;
 const COIN_X = 2250;
 /** How many Neobytes the coin is worth. */
 const COIN_VALUE = 100;
+/** Coin art is 13x13; this scales it up (whole numbers keep it crisp). */
+const COIN_SCALE = 3;
 /** How close (in pixels) Finn must get to the coin to pick it up. */
 const COIN_PICKUP_DISTANCE = 40;
 /** The guide arrows hide once Finn is this close (in pixels) to the current goal. */
@@ -67,7 +91,7 @@ export class LedgesScene extends Phaser.Scene {
   private pointerHeld = false;
   /** True once the billboard dialogue has played all the way through. The Neobyte coin checks this. */
   billboardDone = false;
-  private coin?: Phaser.GameObjects.Arc;
+  private coin?: Phaser.GameObjects.Image;
   private phone?: Phone;
   /** True while the narrator is waiting for the player to open the phone. */
   private awaitingPhoneClick = false;
@@ -97,6 +121,14 @@ export class LedgesScene extends Phaser.Scene {
     this.load.image('finn_idle', 'assets/finn_idle.png');
     this.load.image('finn_step', 'assets/finn_step.png');
     this.load.image('vaulton_logo', VAULTON_LOGO_PATH);
+    this.load.image('ledges_far', 'assets/ledges_far.png');
+    // Made by tools/generate_ledges_art.mjs
+    this.load.image('ledges_mid', 'assets/ledges_mid.png');
+    this.load.image('ledges_near', 'assets/ledges_near.png');
+    this.load.image('ledges_ground', 'assets/ledges_ground.png');
+    this.load.image('streetlamp', 'assets/streetlamp.png');
+    // Made by tools/generate_brand_art.mjs
+    this.load.image('neobyte_coin', 'assets/neobyte_coin.png');
   }
 
   create(): void {
@@ -106,10 +138,10 @@ export class LedgesScene extends Phaser.Scene {
     const worldWidth = this.scale.width * WORLD_WIDTH_SCREENS;
     const groundY = this.scale.height * GROUND_Y_FRACTION;
 
-    this.add
-      .rectangle(0, groundY, worldWidth, this.scale.height - groundY, 0x3e3e70)
-      .setOrigin(0, 0);
-    this.addPlaceholderScenery(worldWidth, groundY);
+    this.addSkyline(worldWidth, groundY);
+    this.addBuildings(groundY);
+    this.addGround(groundY);
+    this.addStreetlamps(worldWidth, groundY);
     this.addBillboard(groundY);
     this.addCoin(groundY);
 
@@ -274,14 +306,15 @@ export class LedgesScene extends Phaser.Scene {
     this.add.rectangle(BILLBOARD_X + 90, groundY, 12, 300, 0x2a2a50).setOrigin(0.5, 1);
 
     const board = (this.billboard = this.add
-      .rectangle(BILLBOARD_X, boardY, 300, 130, 0x1b1b3a)
+      .rectangle(BILLBOARD_X, boardY, 320, 140, 0x1b1b3a)
       .setStrokeStyle(4, 0x0bdbda)
       .setInteractive({ useHandCursor: true }));
 
     // Logo if it's been added, otherwise the name as text.
     if (this.textures.exists('vaulton_logo')) {
-      const logo = this.add.image(BILLBOARD_X, boardY - 15, 'vaulton_logo');
-      logo.setScale(Math.min(260 / logo.width, 70 / logo.height));
+      const logo = this.add.image(BILLBOARD_X, boardY - 16, 'vaulton_logo');
+      // Whole-number scale keeps the pixel-art logo crisp.
+      logo.setScale(Math.max(1, Math.floor(Math.min(300 / logo.width, 84 / logo.height))));
     } else {
       this.add
         .text(BILLBOARD_X, boardY - 15, 'VAULTON', {
@@ -291,11 +324,12 @@ export class LedgesScene extends Phaser.Scene {
         })
         .setOrigin(0.5);
     }
+    // The tagline uses Vaulton's subtitle font.
     this.add
-      .text(BILLBOARD_X, boardY + 38, VAULTON_TAGLINE, {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '10px',
-        color: '#ffffff',
+      .text(BILLBOARD_X, boardY + 46, VAULTON_TAGLINE, {
+        fontFamily: '"VT323", monospace',
+        fontSize: '24px',
+        color: '#d6f9ff',
       })
       .setOrigin(0.5);
 
@@ -323,18 +357,28 @@ export class LedgesScene extends Phaser.Scene {
   }
 
   /**
-   * PLACEHOLDER Neobyte coin: a floating yellow circle. It looks faded and can't be
-   * picked up until the billboard dialogue has played.
+   * The Neobyte coin, floating and spinning. It looks faded and can't be picked up
+   * until the billboard dialogue has played.
    */
   private addCoin(groundY: number): void {
     const coinY = groundY - 70;
-    this.coin = this.add.circle(COIN_X, coinY, 16, 0xffd23f).setStrokeStyle(3, 0xb8860b).setAlpha(0.35);
+    this.coin = this.add.image(COIN_X, coinY, 'neobyte_coin').setScale(COIN_SCALE).setAlpha(0.35);
     this.tweens.add({
       targets: this.coin,
       y: coinY - 12,
       duration: 700,
       yoyo: true,
       repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    // Spin: squash to edge-on and back.
+    this.tweens.add({
+      targets: this.coin,
+      scaleX: COIN_SCALE * 0.15,
+      duration: 450,
+      yoyo: true,
+      repeat: -1,
+      repeatDelay: 600,
       ease: 'Sine.easeInOut',
     });
   }
@@ -508,6 +552,7 @@ export class LedgesScene extends Phaser.Scene {
       {
         title: 'VAULTON',
         logoSrc: this.textures.exists('vaulton_logo') ? VAULTON_LOGO_PATH : undefined,
+        logoScale: 3,
         tagline: VAULTON_TAGLINE,
         body: VAULTON_CARD_BODY,
       },
@@ -521,20 +566,116 @@ export class LedgesScene extends Phaser.Scene {
   }
 
   /**
-   * TEMPORARY: simple shapes so you can see the world scroll as Finn walks.
-   * Delete this function (and its call in create) once the real Ledges background is in.
+   * Far skyline layer, filling the sky down to the ground line. It scrolls slower than
+   * the street (parallax), so only part of the world's width is ever needed. Copies
+   * alternate normal and mirrored so the joins are seamless.
    */
-  private addPlaceholderScenery(worldWidth: number, groundY: number): void {
-    // Ground markings every 100px.
-    for (let x = 0; x < worldWidth; x += 100) {
-      this.add.rectangle(x, groundY + 30, 50, 6, 0x5a5a9c).setOrigin(0, 0.5);
+  private addSkyline(worldWidth: number, groundY: number): void {
+    this.tintSkyline();
+    const source = this.textures.get('ledges_far_tinted').getSourceImage();
+    const scale = groundY / source.height;
+    const tileWidth = source.width * scale;
+    // How much of the layer can scroll into view at this parallax speed.
+    const neededWidth = (worldWidth - this.scale.width) * SKYLINE_PARALLAX + this.scale.width;
+
+    for (let i = 0; i * tileWidth < neededWidth; i++) {
+      this.add
+        .image(i * tileWidth, 0, 'ledges_far_tinted')
+        .setOrigin(0, 0)
+        .setScale(scale)
+        .setFlipX(i % 2 === 1)
+        .setScrollFactor(SKYLINE_PARALLAX, 1);
     }
-    // A street lamp every 400px.
-    for (let x = 200; x < worldWidth; x += 400) {
-      this.add.rectangle(x, groundY, 8, 220, 0x2a2a50).setOrigin(0.5, 1);
-      this.add.rectangle(x, groundY - 220, 40, 10, 0x2a2a50);
-      this.add.circle(x - 14, groundY - 210, 7, 0xffe08a);
+  }
+
+  /**
+   * Makes a recolored copy of the skyline ("ledges_far_tinted"): every pixel moves to
+   * SKYLINE_COLOR's hue, and brightness is stretched between SKYLINE_DARKEST and
+   * SKYLINE_LIGHTEST. Each pixel keeps its place in the dark-to-light order, so the
+   * fade and the building blocks look the same, just lighter.
+   */
+  private tintSkyline(): void {
+    const source = this.textures.get('ledges_far').getSourceImage() as HTMLImageElement;
+    const canvas = this.textures.createCanvas('ledges_far_tinted', source.width, source.height)!;
+    canvas.context.drawImage(source, 0, 0);
+    const image = canvas.context.getImageData(0, 0, source.width, source.height);
+    const px = image.data;
+
+    // Find the art's own darkest and lightest brightness to stretch between.
+    let minV = 1;
+    let maxV = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      const v = Math.max(px[i], px[i + 1], px[i + 2]) / 255;
+      minV = Math.min(minV, v);
+      maxV = Math.max(maxV, v);
     }
+
+    const [hue, saturation] = hexToHsv(SKYLINE_COLOR);
+    for (let i = 0; i < px.length; i += 4) {
+      const [, , v] = rgbToHsv(px[i], px[i + 1], px[i + 2]);
+      const t = (v - minV) / Math.max(maxV - minV, 0.001);
+      const [r, g, b] = hsvToRgb(hue, saturation, SKYLINE_DARKEST + t * (SKYLINE_LIGHTEST - SKYLINE_DARKEST));
+      px[i] = r;
+      px[i + 1] = g;
+      px[i + 2] = b;
+    }
+
+    canvas.context.putImageData(image, 0, 0);
+    canvas.refresh();
+  }
+
+  /**
+   * Two rows of buildings: a hazier row further back (slower parallax), and the street
+   * wall right behind the sidewalk that Finn walks alongside (moves with the street).
+   */
+  private addBuildings(groundY: number): void {
+    this.add
+      .image(0, groundY, 'ledges_mid')
+      .setOrigin(0, 1)
+      .setScale(ART_SCALE)
+      .setScrollFactor(BUILDINGS_PARALLAX, 1);
+    this.add.image(0, groundY, 'ledges_near').setOrigin(0, 1).setScale(ART_SCALE);
+  }
+
+  /** Sidewalk and street below the ground line. Finn's feet rest on its top edge. */
+  private addGround(groundY: number): void {
+    this.add.image(0, groundY, 'ledges_ground').setOrigin(0, 0).setScale(ART_SCALE);
+  }
+
+  /** Streetlamps along the sidewalk, each with a soft glow that flickers now and then. */
+  private addStreetlamps(worldWidth: number, groundY: number): void {
+    // Soft round glow that fades out toward its edge.
+    const size = 96;
+    const glowTexture = this.textures.createCanvas('lamp_glow', size, size)!;
+    const gradient = glowTexture.context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    gradient.addColorStop(0, 'rgba(255, 231, 168, 0.55)');
+    gradient.addColorStop(0.4, 'rgba(255, 231, 168, 0.18)');
+    gradient.addColorStop(1, 'rgba(255, 231, 168, 0)');
+    glowTexture.context.fillStyle = gradient;
+    glowTexture.context.fillRect(0, 0, size, size);
+    glowTexture.refresh();
+
+    for (let x = STREETLAMP_START_X; x < worldWidth; x += STREETLAMP_SPACING) {
+      this.add.image(x, groundY, 'streetlamp').setOrigin(0.5, 1).setScale(ART_SCALE);
+
+      // The bulb sits near the top-left of the lamp art.
+      const glow = this.add.image(x - 14, groundY - 196, 'lamp_glow').setBlendMode(Phaser.BlendModes.ADD);
+      this.flicker(glow);
+    }
+  }
+
+  /** Every few seconds, dip the glow quickly a couple of times, like a failing bulb. */
+  private flicker(glow: Phaser.GameObjects.Image): void {
+    this.time.delayedCall(Phaser.Math.Between(1500, 6000), () => {
+      this.tweens.add({
+        targets: glow,
+        alpha: 0.15,
+        duration: 60,
+        yoyo: true,
+        repeat: Phaser.Math.Between(1, 3),
+        onComplete: () => this.flicker(glow),
+      });
+    });
   }
 
   private isFullyOnScreen(obj: Phaser.GameObjects.Rectangle): boolean {

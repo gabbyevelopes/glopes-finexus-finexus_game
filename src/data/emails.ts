@@ -4,6 +4,10 @@ export interface Email {
   subject: string;
   /** Use \n for line breaks and \n\n between paragraphs. */
   body: string;
+  /** Small sender picture in the Inbox list (pixel art). */
+  icon?: string;
+  /** Logo shown at the top of the opened email (pixel art). */
+  logo?: string;
 }
 
 /** Emails in Finn's Inbox. */
@@ -11,6 +15,8 @@ export const emails: Email[] = [
   {
     id: 'vaulton-acceptance',
     from: 'Vaulton',
+    icon: 'assets/vaulton_icon.png',
+    logo: 'assets/vaulton_logo.png',
     subject: 'Congratulations!',
     body:
       'Dear Finn,\n\n' +

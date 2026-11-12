@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { hexToHsv, hsvToRgb, rgbToHsv } from './color';
 
 type Region = 'hair' | 'skin' | null;
 
@@ -11,30 +12,6 @@ interface FrameData {
 
 /** Rows from the top of Finn's art (in source pixels) where his hair can be. Below this is visor/clothes. */
 const HAIR_MAX_ROW = 62;
-
-function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const d = max - min;
-  let h = 0;
-  if (d) {
-    if (max === r) h = ((g - b) / d) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h *= 60;
-    if (h < 0) h += 360;
-  }
-  return [h, max ? d / max : 0, max / 255];
-}
-
-function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
-  const c = v * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = v - c;
-  const [r, g, b] =
-    h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
-  return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
-}
 
 /** Works out whether a pixel is hair (blue, top of the head) or skin (warm peach tones). */
 function classify(r: number, g: number, b: number, row: number): Region {
@@ -89,7 +66,7 @@ export class FinnRecolor {
 
   /** Repaint Finn with these colors (hex), or null to keep the original art for that region. */
   apply(hair: string | null, skin: string | null): void {
-    const targets = { hair: hair ? this.hexToHsv(hair) : null, skin: skin ? this.hexToHsv(skin) : null };
+    const targets = { hair: hair ? hexToHsv(hair) : null, skin: skin ? hexToHsv(skin) : null };
 
     for (const frame of this.frames) {
       const ctx = frame.live.context;
@@ -115,10 +92,5 @@ export class FinnRecolor {
       ctx.putImageData(image, 0, 0);
       frame.live.refresh();
     }
-  }
-
-  private hexToHsv(hex: string): [number, number, number] {
-    const n = parseInt(hex.slice(1), 16);
-    return rgbToHsv((n >> 16) & 255, (n >> 8) & 255, n & 255);
   }
 }

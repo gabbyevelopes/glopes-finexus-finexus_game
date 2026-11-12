@@ -382,3 +382,39 @@
   /* Keep the paragraph breaks written in emails.ts. */
   white-space: pre-line;
 }
+
+/* Pixel-art images: shown at whole-number sizes so they stay crisp. */
+.phone-app-icon-img,
+.phone-wallet-coin,
+.phone-inbox-icon,
+.phone-email-logo {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* App tile icon: 13px coin at 2x, centered in the tile. */
+.phone-app-icon-img {
+  width: 26px;
+  height: 26px;
+  margin: 9px auto 0;
+}
+
+/* Wallet: coin above the balance, 13px at 4x. */
+.phone-wallet-coin {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+}
+
+/* Inbox: sender picture, 16px emblem at 2x. */
+.phone-inbox-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+
+/* Opened email: full logo at its real size (the phone is too narrow for 2x). */
+.phone-email-logo {
+  width: 139px;
+  margin: 2px 0 12px;
+}

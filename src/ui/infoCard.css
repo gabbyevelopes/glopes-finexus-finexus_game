@@ -21,9 +21,8 @@
 
 .info-card-logo {
   display: block;
-  max-width: 280px;
-  max-height: 90px;
-  margin: 0 auto 12px;
+  max-width: 100%;
+  margin: 0 auto 10px;
   image-rendering: pixelated;
 }
 
@@ -33,10 +32,12 @@
   margin-bottom: 12px;
 }
 
+/* Vaulton's subtitle font, different from the game's text font. */
 .info-card-tagline {
-  font-size: 11px;
-  color: #0bdbda;
-  margin-bottom: 18px;
+  font-family: 'VT323', monospace;
+  font-size: 24px;
+  color: #d6f9ff;
+  margin-bottom: 16px;
 }
 
 .info-card-body {
