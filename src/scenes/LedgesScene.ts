@@ -40,8 +40,10 @@ const WALK_ANIM_FPS = 8;
 const CAMERA_DEADZONE_FRACTION = 0.6;
 /** Finn's height as a fraction of the screen height. */
 const FINN_HEIGHT_FRACTION = 0.25;
-/** How many screens wide the world is. */
-const WORLD_WIDTH_SCREENS = 3;
+/** How wide the world is, in pixels. The street art is drawn for exactly this width. */
+const WORLD_WIDTH = 2400;
+/** Where Finn starts, in world pixels from the left edge. */
+const FINN_START_X = 400;
 /** Ground line, as a fraction of the screen height from the top. */
 const GROUND_Y_FRACTION = 0.8;
 /**
@@ -135,7 +137,7 @@ export class LedgesScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#5A5A9C');
     AudioManager.playMusic('ledges');
 
-    const worldWidth = this.scale.width * WORLD_WIDTH_SCREENS;
+    const worldWidth = WORLD_WIDTH;
     const groundY = this.scale.height * GROUND_Y_FRACTION;
 
     this.addSkyline(worldWidth, groundY);
@@ -170,7 +172,7 @@ export class LedgesScene extends Phaser.Scene {
     });
 
     // Both frames share the same size, so one scale and a feet anchor keep him steady.
-    this.finn = this.add.sprite(this.scale.width / 2, groundY, 'finn_idle_live').setOrigin(0.5, 1);
+    this.finn = this.add.sprite(FINN_START_X, groundY, 'finn_idle_live').setOrigin(0.5, 1);
     this.finn.setScale((this.scale.height * FINN_HEIGHT_FRACTION) / this.finn.height);
 
     this.cameras.main.setBounds(0, 0, worldWidth, this.scale.height);
@@ -691,6 +693,6 @@ export class LedgesScene extends Phaser.Scene {
 
   private clampX(x: number): number {
     const half = this.finn.displayWidth / 2;
-    return Phaser.Math.Clamp(x, half, this.scale.width * WORLD_WIDTH_SCREENS - half);
+    return Phaser.Math.Clamp(x, half, WORLD_WIDTH - half);
   }
 }

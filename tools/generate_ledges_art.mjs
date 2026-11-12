@@ -705,7 +705,9 @@ function drawMidBuilding(img, x, w, h) {
 }
 
 function makeMid() {
-  const img = new Img(500, 96);
+  // At 0.7 parallax with the widest view (1200px), (2400 - 1200) * 0.7 + 1200 = 2040 screen px
+  // can scroll into view = 510 art px. A little extra for safety.
+  const img = new Img(520, 96);
   let x = 0;
   while (x < img.w) {
     const w = randInt(36, 62);
