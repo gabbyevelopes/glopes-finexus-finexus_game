@@ -340,14 +340,25 @@
   opacity: 0.8;
 }
 
-.phone-email-back {
-  background: none;
+.phone-email {
+  position: relative;
+}
+
+/* X in the top-right corner: closes the message and returns to the Inbox list. */
+.phone-email-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: #ff3b5c;
   border: none;
-  padding: 0;
-  margin-bottom: 12px;
-  color: #7ad0ff;
+  border-radius: 6px;
+  color: #ffffff;
   font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: 8px;
+  line-height: 20px;
+  padding: 0;
   cursor: pointer;
 }
 
@@ -355,6 +366,7 @@
   font-size: 7px;
   color: #7ad0ff;
   margin-bottom: 8px;
+  padding: 6px 28px 0 0; /* Room for the X button. */
 }
 
 .phone-email-subject {

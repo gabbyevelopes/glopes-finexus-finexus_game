@@ -135,12 +135,13 @@ function colorPicker(
   return section;
 }
 
-function emailView(from: string, subject: string, body: string, onBack: () => void): HTMLElement {
+function emailView(from: string, subject: string, body: string, onClose: () => void): HTMLElement {
   const view = el('div', 'phone-email');
-  const back = el('button', 'phone-email-back', '< All mail');
-  back.addEventListener('click', onBack);
+  const close = el('button', 'phone-email-close', 'X');
+  close.setAttribute('aria-label', 'Close message');
+  close.addEventListener('click', onClose);
   view.append(
-    back,
+    close,
     el('div', 'phone-email-from', `From: ${from}`),
     el('div', 'phone-email-subject', subject),
     el('p', 'phone-email-body', body)

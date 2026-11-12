@@ -1,0 +1,62 @@
+.level-complete-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  animation: level-complete-fade 0.6s ease-out;
+}
+
+@keyframes level-complete-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.level-complete {
+  width: 520px;
+  background: #1b1b3a;
+  border: 4px solid #0bdbda;
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-sizing: border-box;
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  color: #ffffff;
+}
+
+.level-complete-title {
+  font-size: 22px;
+  color: #0bdbda;
+  margin-bottom: 28px;
+}
+
+.level-complete-unlocked {
+  font-size: 10px;
+  color: #ffd23f;
+  margin-bottom: 12px;
+}
+
+.level-complete-next {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.level-complete-btn {
+  border: none;
+  outline: none;
+  background: #0bdbda;
+  color: #1b1b3a;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.level-complete-btn:hover {
+  opacity: 0.9;
+}

@@ -107,6 +107,21 @@ export const inboxInsideLines: DialogueLine[] = [
   },
 ];
 
+// --- Ending ---
+
+/** After the email is opened. Waits for the player to close the phone. */
+export const exitPhonePromptLines: DialogueLine[] = [
+  { character: 'Narrator', text: 'Close your phone.', waitForAction: true },
+];
+
+/** Once the phone is closed. The last line of Level 0. */
+export const endingLines: DialogueLine[] = [
+  { character: 'Finn', text: "Looks like it's time to get a suit.", portraitColor: '#4CAF50' },
+];
+
+/** Shown on the Level 0 complete screen. */
+export const NEXT_LEVEL_TITLE = 'Level 1 - Welcome to Vaulton';
+
 /** Plays after the player closes the Vaulton info card (once only). */
 export const billboardLines: DialogueLine[] = [
   {

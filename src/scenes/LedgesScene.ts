@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DialogueBox } from '../ui/DialogueBox';
 import { InfoCard } from '../ui/InfoCard';
+import { LevelComplete } from '../ui/LevelComplete';
 import { Phone } from '../ui/phone/Phone';
 import { gameState } from '../state/gameState';
 import {
@@ -13,6 +14,9 @@ import {
   inboxInsideLines,
   inboxPromptLines,
   phoneHintLines,
+  endingLines,
+  exitPhonePromptLines,
+  NEXT_LEVEL_TITLE,
   VAULTON_CARD_BODY,
   VAULTON_TAGLINE,
   type DialogueLine,
@@ -25,7 +29,7 @@ import { FinnRecolor } from '../game/FinnRecolor';
  * Steps of the phone tutorial after the first coin. During it, only the app for the
  * current step can be opened and the phone can't be closed.
  */
-type PhoneTutorialStep = 'wallet' | 'finlab' | 'inbox' | 'email' | 'done';
+type PhoneTutorialStep = 'wallet' | 'finlab' | 'inbox' | 'email' | 'exit' | 'done';
 
 /** Finn's walking speed, in pixels per second. */
 const WALK_SPEED = 180;
@@ -353,6 +357,7 @@ export class LedgesScene extends Phaser.Scene {
       onAppOpen: (appId) => this.onPhoneAppOpen(appId),
       onAppBack: (appId) => this.onPhoneAppBack(appId),
       onAppEvent: (appId, event) => this.onPhoneAppEvent(appId, event),
+      onClose: () => this.onPhoneClosed(),
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phone?.destroy());
@@ -396,12 +401,30 @@ export class LedgesScene extends Phaser.Scene {
     if (appId === 'finlab' && event === 'appearance-changed') {
       this.applyAppearance();
     } else if (appId === 'inbox' && event === 'email-opened' && this.phoneTutorial === 'email') {
-      // Tutorial finished: every app can be opened and the phone can be closed again.
-      this.phoneTutorial = 'done';
-      this.closeDialogue();
+      // Tutorial finished: the phone can be closed again, which leads into the ending.
+      this.phoneTutorial = 'exit';
       this.phone?.setAllowedApp(null);
       this.phone?.setClosable(true);
+      this.openDialogue(exitPhonePromptLines);
     }
+  }
+
+  /** The phone was closed. After the acceptance email, this ends Level 0. */
+  private onPhoneClosed(): void {
+    if (this.phoneTutorial !== 'exit') return;
+    this.phoneTutorial = 'done';
+    this.openDialogue(endingLines, () => this.showLevelComplete());
+  }
+
+  private showLevelComplete(): void {
+    const parent = this.sys.game.canvas.parentElement;
+    if (!parent) return;
+    this.lockMovement(); // Level over: Finn stays put.
+    new LevelComplete(parent, 'Level 0', NEXT_LEVEL_TITLE, () => {
+      // TODO: start Level 1 here once it's built, e.g. this.scene.start('Level1Scene').
+      // Until then, Continue restarts the game from the beginning.
+      window.location.reload();
+    });
   }
 
   /** Recolor Finn to match the hair and skin chosen in FinLab. */
