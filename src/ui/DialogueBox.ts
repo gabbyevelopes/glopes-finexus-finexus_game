@@ -1,5 +1,10 @@
 import './dialogueBox.css';
-import { TYPING_SPEED_MS, type DialogueLine } from '../data/dialogueLines';
+import {
+  COMMA_PAUSE_MS,
+  SENTENCE_PAUSE_MS,
+  TYPING_SPEED_MS,
+  type DialogueLine,
+} from '../data/dialogueLines';
 import { AudioManager } from '../audio/AudioManager';
 
 export class DialogueBox {
@@ -67,7 +72,7 @@ export class DialogueBox {
     this.nextBtn.disabled = true;
     this.charIndex = 0;
     this.stopTyping();
-    this.typingTimer = window.setInterval(() => this.typeNextChar(), TYPING_SPEED_MS);
+    this.typingTimer = window.setTimeout(() => this.typeNextChar(), TYPING_SPEED_MS);
   }
 
   private typeNextChar(): void {
@@ -78,7 +83,20 @@ export class DialogueBox {
     this.nextBtn.disabled = false;
     if (this.charIndex >= text.length) {
       this.stopTyping();
+      return;
     }
+    const delay = TYPING_SPEED_MS + this.pauseAfter(text, this.charIndex - 1);
+    this.typingTimer = window.setTimeout(() => this.typeNextChar(), delay);
+  }
+
+  /** Extra pause after the character at index `i`, so punctuation reads naturally. */
+  private pauseAfter(text: string, i: number): number {
+    const ch = text[i];
+    const next = text[i + 1];
+    // Pause once at the end of "..." rather than after every dot.
+    if ((ch === '.' || ch === '!' || ch === '?') && next !== '.') return SENTENCE_PAUSE_MS;
+    if (ch === ',') return COMMA_PAUSE_MS;
+    return 0;
   }
 
   private get isTyping(): boolean {
@@ -87,7 +105,7 @@ export class DialogueBox {
 
   private stopTyping(): void {
     if (this.typingTimer !== undefined) {
-      window.clearInterval(this.typingTimer);
+      window.clearTimeout(this.typingTimer);
       this.typingTimer = undefined;
     }
   }
