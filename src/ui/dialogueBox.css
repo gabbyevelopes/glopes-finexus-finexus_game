@@ -14,6 +14,8 @@
   gap: 16px;
   font-family: 'Press Start 2P', monospace;
   box-sizing: border-box;
+  /* Above the phone, so the narrator can guide the player while it's open. */
+  z-index: 30;
 }
 
 .dialogue-portrait {
@@ -40,6 +42,8 @@
   color: #333333;
   font-size: 11px;
   line-height: 1.7;
+  /* Respect line breaks (\n) written in the dialogue text. */
+  white-space: pre-line;
 }
 
 .dialogue-next-btn {

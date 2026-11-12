@@ -67,6 +67,8 @@ export class DialogueBox {
       this.portraitEl.style.display = 'none';
     }
 
+    this.nextBtn.style.display = line.waitForAction ? 'none' : '';
+
     // Keep Next disabled until the first character appears, so a fast
     // double-click can't skip a line before it has started typing.
     this.nextBtn.disabled = true;
